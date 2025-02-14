@@ -1,0 +1,61 @@
+module data_generator#(
+  parameter datawidth_1 = 5,
+  parameter datawidth_2 = 64
+)(
+  input clk,
+  input reset,
+  input [datawidth_1-1:0] pio,
+  input [datawidth_2-1:0] s_datagen_in,
+//   input s_datagen_in_valid,
+//   output reg s_datagen_in_ready,
+  output reg [datawidth_2-1:0] m_datagen_out,
+  output reg m_datagen_out_valid,
+  input m_datagen_out_ready
+);
+
+//   typedef enum logic {
+//     data_trans
+//   } state_1;
+
+//   state_1 state, next_state;
+
+//   always @(posedge clk or posedge reset) begin
+//     if (reset)
+//      state = data_trans;
+//     else
+//       state = next_state;
+//   end
+
+//   always @(*) begin
+//     next_state = state;  // Default assignment
+//     if (pio == 2 && s_datagen_in_valid && s_datagen_in_ready)
+//       next_state = data_trans;
+//   end
+
+  always @(posedge clk ) begin
+    if (reset) begin
+      m_datagen_out <= 0;
+      m_datagen_out_valid <= 0;
+    end
+    else begin
+      if (pio == 2 &&  m_datagen_out_ready) begin
+      m_datagen_out <= s_datagen_in;
+      m_datagen_out_valid <= 1;
+      end
+      else
+        begin
+          if(!m_datagen_out_ready)
+            m_datagen_out_valid<=m_datagen_out_valid;
+          else begin
+            m_datagen_out<=m_datagen_out;
+            m_datagen_out_valid<=0;
+        end
+      end
+    end
+  end
+
+//   always @(*) begin
+//     s_datagen_in_ready = (state == data_trans) && !reset;
+//   end
+
+endmodule

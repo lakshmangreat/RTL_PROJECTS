@@ -1,0 +1,121 @@
+
+module skid_buffer_tb();
+//port list
+ parameter w=8;
+  logic clk;
+  logic reset;
+  //input axi protocols
+  logic s_valid;
+  logic [w-1:0] s_data;
+  logic s_ready;
+  //output axi 
+  logic [w-1:0] m_data;
+  logic m_valid;
+  logic m_ready;
+  
+  //reading if input files
+  localparam string data_file= "input_data.csv";
+  
+  //design module instantiation
+  skid_buffer #(w) instance1(clk,reset,
+                                                     s_valid,
+                                                      s_data,
+                                                      s_ready,
+                                                      m_data,
+                                                      m_valid,
+                                                       m_ready);
+  
+  
+    // Clock generation
+  initial begin
+    clk = 1'b0;              // clock is initialized with value 0
+    forever #10 clk = ~clk;   
+  end
+
+  // Task to perform reset
+  task automatic reset_task;
+  begin
+   repeat(4) @(posedge clk)reset = 1; //reset is initialized with 1
+   reset = 0;                  
+    $display("Reset done");
+  end
+  endtask
+  
+  
+  
+  initial
+    begin
+    //Declaring input ports initially zero
+      s_valid=0;
+      s_data=0;
+      m_ready=0;
+      //Calling reset task
+      reset_task;
+      m_ready=1;
+      //Reading data
+      fork
+        ready;
+        read_csv(data_file,1);
+      join
+        
+    $finish; // End the simulation
+      
+   
+    end
+  
+  
+  //Data reading task
+  task automatic read_csv;
+    input string filename;
+    input int throttle;
+    begin
+      int fp,wait_n;
+      logic[w-1:0] data;
+      //File opening
+      fp=$fopen(filename,"r");
+      //checking values in file
+      if(fp == 0)
+        begin
+          $display("Error in opening file");
+        end
+      //Data reading from file
+      while($fscanf(fp,"%d",data)==1)
+        begin
+       // values reading from file
+          s_data<=data;
+          s_valid<=1;
+          @(posedge clk);
+          while(!s_ready)
+            @(posedge clk);
+          s_valid<=0;
+          wait_n=$urandom % throttle;
+          repeat(wait_n)
+            begin
+              @(posedge clk);
+            end
+        end
+      $fclose(fp);
+    end
+  endtask
+  
+  // giving m_ready
+   task automatic ready;
+    begin
+      repeat(2)@(posedge clk)m_ready <=1;
+      @(posedge clk) m_ready <=0;
+      repeat(2)@(posedge clk)m_ready <=1;
+      repeat(2)@(posedge clk)m_ready <=0;
+      repeat(2)@(posedge clk)m_ready <=1; 
+      repeat(2)@(posedge clk)m_ready <=0;
+      repeat(2)@(posedge clk)m_ready <=1;
+    end
+  endtask
+
+ // Initial block
+  initial begin
+    // Dump file for waveform viewing
+    $dumpfile("skid_buffer_tb.vcd");  // Dumpfile name
+    $dumpvars(0, skid_buffer_tb);     
+  end
+endmodule
+         

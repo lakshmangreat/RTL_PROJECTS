@@ -1,0 +1,261 @@
+ module pdcch_mainblock#(parameter DATA_OUT_WIDTH= 8, CONFIG_BIT_OUT_WIDTH=$bits(config_out_t))(
+    input  clk,
+    input  reset,
+    output logic  s_mainblock_ready,
+    input logic   m_mainblock_ready,
+    input logic s_mainblock_valid,
+    output logic m_mainblock_valid,
+    input logic [ CONFIG_BIT_OUT_WIDTH-1:0] s_mainblock_data,
+   output logic [ DATA_OUT_WIDTH-1:0] m_mainblock_data
+);
+  config_out_t   cont_configs_2 ;
+  
+
+   logic [30:0] x2,x1;
+  logic [30:0] lfsr_x1,lfsr_S;
+  logic [44:0] freq_bit_map_sum;
+   logic [10:0] cntr_1;
+   logic [10:0] cntr_2;
+   logic [10:0] cntr_3;
+  
+  
+  // FSM states
+  typedef enum reg [2:0] {
+        idle     ,
+        process  ,  
+        out_process  , 
+        lfsr_read,
+        data_out
+    } state_t;
+
+    state_t current_state, next_state;
+
+    // Initialization register
+     // Array for initialization values
+      // Array for processed output values
+
+    // Sequential block for state transitions
+    always @(posedge clk ) begin
+        if (reset) 
+            current_state <= idle;
+           
+         else 
+            current_state <= next_state;
+       
+    end
+  
+  
+  
+   always @(*)
+  case (current_state)
+    idle:begin
+      next_state <= process;
+    end
+        process: begin
+          if(s_mainblock_valid && s_mainblock_ready)begin
+                next_state=out_process;
+            end
+            else begin
+                next_state=process;
+            end
+        end
+        out_process: begin
+            next_state=lfsr_read;
+        end
+    lfsr_read :begin
+      next_state =data_out;
+    end
+    data_out: begin
+    if (cntr_1 == cont_configs_2.pnseqlength) 
+        next_state = idle;
+    else 
+        next_state = data_out;
+end
+
+        
+        default : begin
+            next_state=idle;
+        end
+    endcase
+
+
+    // Combinational block for state logic
+  always@(posedge clk) begin
+         if(reset) begin
+        m_mainblock_data<=0;
+        m_mainblock_valid<=0;
+       cntr_1<=0;
+       cntr_2<=0;
+       cntr_3<=0;  
+       x2<=0;
+       x1<=0;;
+       lfsr_x1<=0;
+       lfsr_S<=0;
+       freq_bit_map_sum<=0;
+  
+           
+    end
+    else begin
+      case(current_state)
+        idle : begin 
+             cntr_1<=0;
+          cntr_2<=0;
+          cntr_3<=0;
+        end
+        
+       process: begin
+         if(s_mainblock_valid && s_mainblock_ready)begin
+                    cont_configs_2<=s_mainblock_data;
+                end
+                else begin
+                    cont_configs_2<=cont_configs_2;
+                end
+            end
+
+            out_process: begin
+
+              
+         x2[0]<=	cont_configs_2.C_init[1]^cont_configs_2.C_init[2]^cont_configs_2.C_init[3]^cont_configs_2.C_init[8]^cont_configs_2.C_init[12]^cont_configs_2.C_init[16]^cont_configs_2.C_init[19]^cont_configs_2.C_init[20]^cont_configs_2.C_init[23];											
+              x2[1]<= 	cont_configs_2.C_init[2]^cont_configs_2.C_init[3]^cont_configs_2.C_init[4]^cont_configs_2.C_init[9]^cont_configs_2.C_init[13]^cont_configs_2.C_init[17]^cont_configs_2.C_init[20]^cont_configs_2.C_init[21]^cont_configs_2.C_init[24];											
+x2[2]<=	cont_configs_2.C_init[3]^cont_configs_2.C_init[4]^cont_configs_2.C_init[5]^cont_configs_2.C_init[10]^cont_configs_2.C_init[14]^cont_configs_2.C_init[18]^cont_configs_2.C_init[21]^cont_configs_2.C_init[22]^cont_configs_2.C_init[25];											
+x2[3]<=	cont_configs_2.C_init[4]^cont_configs_2.C_init[5]^cont_configs_2.C_init[6]^cont_configs_2.C_init[11]^cont_configs_2.C_init[15]^cont_configs_2.C_init[19]^cont_configs_2.C_init[22]^cont_configs_2.C_init[23]^cont_configs_2.C_init[26];											
+x2[4]<=	cont_configs_2.C_init[5]^cont_configs_2.C_init[6]^cont_configs_2.C_init[7]^cont_configs_2.C_init[12]^cont_configs_2.C_init[16]^cont_configs_2.C_init[20]^cont_configs_2.C_init[23]^cont_configs_2.C_init[24]^cont_configs_2.C_init[27];											
+x2[5]<=	cont_configs_2.C_init[6]^cont_configs_2.C_init[7]^cont_configs_2.C_init[8]^cont_configs_2.C_init[13]^cont_configs_2.C_init[17]^cont_configs_2.C_init[21]^cont_configs_2.C_init[24]^cont_configs_2.C_init[25]^cont_configs_2.C_init[28];											
+x2[6]<=	cont_configs_2.C_init[7]^cont_configs_2.C_init[8]^cont_configs_2.C_init[9]^cont_configs_2.C_init[14]^cont_configs_2.C_init[18]^cont_configs_2.C_init[22]^cont_configs_2.C_init[25]^cont_configs_2.C_init[26]^cont_configs_2.C_init[29];											
+x2[7]<=	cont_configs_2.C_init[8]^cont_configs_2.C_init[9]^cont_configs_2.C_init[10]^cont_configs_2.C_init[15]^cont_configs_2.C_init[19]^cont_configs_2.C_init[23]^cont_configs_2.C_init[26]^cont_configs_2.C_init[27]^cont_configs_2.C_init[30];											
+x2[8]<=	cont_configs_2.C_init[0]^cont_configs_2.C_init[1]^cont_configs_2.C_init[2]^cont_configs_2.C_init[3]^cont_configs_2.C_init[9]^cont_configs_2.C_init[10]^cont_configs_2.C_init[11]^cont_configs_2.C_init[16]^cont_configs_2.C_init[20]^cont_configs_2.C_init[24]^cont_configs_2.C_init[27]^cont_configs_2.C_init[28];
+x2[9]<=	cont_configs_2.C_init[1]^cont_configs_2.C_init[2]^cont_configs_2.C_init[3]^cont_configs_2.C_init[4]^cont_configs_2.C_init[10]^cont_configs_2.C_init[11]^cont_configs_2.C_init[12]^cont_configs_2.C_init[17]^cont_configs_2.C_init[21]^cont_configs_2.C_init[25]^cont_configs_2.C_init[28]^cont_configs_2.C_init[29];								
+x2[10]<=	cont_configs_2.C_init[2]^cont_configs_2.C_init[3]^cont_configs_2.C_init[4]^cont_configs_2.C_init[5]^cont_configs_2.C_init[11]^cont_configs_2.C_init[12]^cont_configs_2.C_init[13]^cont_configs_2.C_init[18]^cont_configs_2.C_init[22]^cont_configs_2.C_init[26]^cont_configs_2.C_init[29]^cont_configs_2.C_init[30];								
+x2[11]<=	cont_configs_2.C_init[0]^cont_configs_2.C_init[1]^cont_configs_2.C_init[2]^cont_configs_2.C_init[4]^cont_configs_2.C_init[5]^cont_configs_2.C_init[6]^cont_configs_2.C_init[12]^cont_configs_2.C_init[13]^cont_configs_2.C_init[14]^cont_configs_2.C_init[19]^cont_configs_2.C_init[23]^cont_configs_2.C_init[27]^cont_configs_2.C_init[30];
+x2[12]<=	cont_configs_2.C_init[0]^cont_configs_2.C_init[5]^cont_configs_2.C_init[6]^cont_configs_2.C_init[7]^cont_configs_2.C_init[13]^cont_configs_2.C_init[14]^cont_configs_2.C_init[15]^cont_configs_2.C_init[20]^cont_configs_2.C_init[24]^cont_configs_2.C_init[28];
+x2[13]<=	cont_configs_2.C_init[1]^cont_configs_2.C_init[6]^cont_configs_2.C_init[7]^cont_configs_2.C_init[8]^cont_configs_2.C_init[14]^cont_configs_2.C_init[15]^cont_configs_2.C_init[16]^cont_configs_2.C_init[21]^cont_configs_2.C_init[25]^cont_configs_2.C_init[29];										
+x2[14]<=	cont_configs_2.C_init[2]^cont_configs_2.C_init[7]^cont_configs_2.C_init[8]^cont_configs_2.C_init[9]^cont_configs_2.C_init[15]^cont_configs_2.C_init[16]^cont_configs_2.C_init[17]^cont_configs_2.C_init[22]^cont_configs_2.C_init[26]^cont_configs_2.C_init[30];										
+x2[15]<=	cont_configs_2.C_init[0]^cont_configs_2.C_init[1]^cont_configs_2.C_init[2]^cont_configs_2.C_init[8]^cont_configs_2.C_init[9]^cont_configs_2.C_init[10]^cont_configs_2.C_init[16]^cont_configs_2.C_init[17]^cont_configs_2.C_init[18]^cont_configs_2.C_init[23]^cont_configs_2.C_init[27];
+x2[16]<=	cont_configs_2.C_init[1]^cont_configs_2.C_init[2]^cont_configs_2.C_init[3]^cont_configs_2.C_init[9]^cont_configs_2.C_init[10]^cont_configs_2.C_init[11]^cont_configs_2.C_init[17]^cont_configs_2.C_init[18]^cont_configs_2.C_init[19]^cont_configs_2.C_init[24]^cont_configs_2.C_init[28];									
+x2[17]<=	cont_configs_2.C_init[2]^cont_configs_2.C_init[3]^cont_configs_2.C_init[4]^cont_configs_2.C_init[10]^cont_configs_2.C_init[11]^cont_configs_2.C_init[12]^cont_configs_2.C_init[18]^cont_configs_2.C_init[19]^cont_configs_2.C_init[20]^cont_configs_2.C_init[25]^cont_configs_2.C_init[29];									
+x2[18]<=	cont_configs_2.C_init[3]^cont_configs_2.C_init[4]^cont_configs_2.C_init[5]^cont_configs_2.C_init[11]^cont_configs_2.C_init[12]^cont_configs_2.C_init[13]^cont_configs_2.C_init[19]^cont_configs_2.C_init[20]^cont_configs_2.C_init[21]^cont_configs_2.C_init[26]^cont_configs_2.C_init[30];								
+x2[19]<=	cont_configs_2.C_init[0]^cont_configs_2.C_init[1]^cont_configs_2.C_init[2]^cont_configs_2.C_init[3]^cont_configs_2.C_init[4]^cont_configs_2.C_init[5]^cont_configs_2.C_init[6]^cont_configs_2.C_init[12]^cont_configs_2.C_init[13]^cont_configs_2.C_init[14]^cont_configs_2.C_init[20]^cont_configs_2.C_init[21]^cont_configs_2.C_init[22]^cont_configs_2.C_init[27];
+x2[20]<=	cont_configs_2.C_init[1]^cont_configs_2.C_init[2]^cont_configs_2.C_init[3]^cont_configs_2.C_init[4]^cont_configs_2.C_init[5]^cont_configs_2.C_init[6]^cont_configs_2.C_init[7]^cont_configs_2.C_init[13]^cont_configs_2.C_init[14]^cont_configs_2.C_init[15]^cont_configs_2.C_init[21]^cont_configs_2.C_init[22]^cont_configs_2.C_init[23]^cont_configs_2.C_init[28];						
+x2[21]<=	cont_configs_2.C_init[2]^cont_configs_2.C_init[3]^cont_configs_2.C_init[4]^cont_configs_2.C_init[5]^cont_configs_2.C_init[6]^cont_configs_2.C_init[7]^cont_configs_2.C_init[8]^cont_configs_2.C_init[14]^cont_configs_2.C_init[15]^cont_configs_2.C_init[16]^cont_configs_2.C_init[22]^cont_configs_2.C_init[23]^cont_configs_2.C_init[24]^cont_configs_2.C_init[29];						
+x2[22]<=	cont_configs_2.C_init[3]^cont_configs_2.C_init[4]^cont_configs_2.C_init[5]^cont_configs_2.C_init[6]^cont_configs_2.C_init[7]^cont_configs_2.C_init[8]^cont_configs_2.C_init[9]^cont_configs_2.C_init[15]^cont_configs_2.C_init[16]^cont_configs_2.C_init[17]^cont_configs_2.C_init[23]^cont_configs_2.C_init[24]^cont_configs_2.C_init[25]^cont_configs_2.C_init[30];						
+x2[23]<=	cont_configs_2.C_init[0]^cont_configs_2.C_init[1]^cont_configs_2.C_init[2]^cont_configs_2.C_init[3]^cont_configs_2.C_init[4]^cont_configs_2.C_init[5]^cont_configs_2.C_init[6]^cont_configs_2.C_init[7]^cont_configs_2.C_init[8]^cont_configs_2.C_init[9]^cont_configs_2.C_init[10]^cont_configs_2.C_init[16]^cont_configs_2.C_init[17]^cont_configs_2.C_init[18]^cont_configs_2.C_init[24]^cont_configs_2.C_init[25]^cont_configs_2.C_init[26];
+x2[24]<=	cont_configs_2.C_init[1]^cont_configs_2.C_init[2]^cont_configs_2.C_init[3]^cont_configs_2.C_init[4]^cont_configs_2.C_init[5]^cont_configs_2.C_init[6]^cont_configs_2.C_init[7]^cont_configs_2.C_init[8]^cont_configs_2.C_init[9]^cont_configs_2.C_init[10]^cont_configs_2.C_init[11]^cont_configs_2.C_init[17]^cont_configs_2.C_init[18]^cont_configs_2.C_init[19]^cont_configs_2.C_init[25]^cont_configs_2.C_init[26]^cont_configs_2.C_init[27];			
+x2[25]<=	cont_configs_2.C_init[2]^cont_configs_2.C_init[3]^cont_configs_2.C_init[4]^cont_configs_2.C_init[5]^cont_configs_2.C_init[6]^cont_configs_2.C_init[7]^cont_configs_2.C_init[8]^cont_configs_2.C_init[9]^cont_configs_2.C_init[10]^cont_configs_2.C_init[11]^cont_configs_2.C_init[12]^cont_configs_2.C_init[18]^cont_configs_2.C_init[19]^cont_configs_2.C_init[20]^cont_configs_2.C_init[26]^cont_configs_2.C_init[27]^cont_configs_2.C_init[28];			
+x2[26]<=	cont_configs_2.C_init[3]^cont_configs_2.C_init[4]^cont_configs_2.C_init[5]^cont_configs_2.C_init[6]^cont_configs_2.C_init[7]^cont_configs_2.C_init[8]^cont_configs_2.C_init[9]^cont_configs_2.C_init[10]^cont_configs_2.C_init[11]^cont_configs_2.C_init[12]^cont_configs_2.C_init[13]^cont_configs_2.C_init[19]^cont_configs_2.C_init[20]^cont_configs_2.C_init[21]^cont_configs_2.C_init[27]^cont_configs_2.C_init[28]^cont_configs_2.C_init[29];			
+x2[27]<=	cont_configs_2.C_init[4]^cont_configs_2.C_init[5]^cont_configs_2.C_init[6]^cont_configs_2.C_init[7]^cont_configs_2.C_init[8]^cont_configs_2.C_init[9]^cont_configs_2.C_init[10]^cont_configs_2.C_init[11]^cont_configs_2.C_init[12]^cont_configs_2.C_init[13]^cont_configs_2.C_init[14]^cont_configs_2.C_init[20]^cont_configs_2.C_init[21]^cont_configs_2.C_init[22]^cont_configs_2.C_init[28]^cont_configs_2.C_init[29]^cont_configs_2.C_init[30];			
+x2[28]<=	cont_configs_2.C_init[0]^cont_configs_2.C_init[1]^cont_configs_2.C_init[2]^cont_configs_2.C_init[3]^cont_configs_2.C_init[5]^cont_configs_2.C_init[6]^cont_configs_2.C_init[7]^cont_configs_2.C_init[8]^cont_configs_2.C_init[9]^cont_configs_2.C_init[10]^cont_configs_2.C_init[11]^cont_configs_2.C_init[12]^cont_configs_2.C_init[13]^cont_configs_2.C_init[14]^cont_configs_2.C_init[15]^cont_configs_2.C_init[21]^cont_configs_2.C_init[22]^cont_configs_2.C_init[23]^cont_configs_2.C_init[29]^cont_configs_2.C_init[30];
+x2[29]<=	cont_configs_2.C_init[0]^cont_configs_2.C_init[4]^cont_configs_2.C_init[6]^cont_configs_2.C_init[7]^cont_configs_2.C_init[8]^cont_configs_2.C_init[9]^cont_configs_2.C_init[10]^cont_configs_2.C_init[11]^cont_configs_2.C_init[12]^cont_configs_2.C_init[13]^cont_configs_2.C_init[14]^cont_configs_2.C_init[15]^cont_configs_2.C_init[16]^cont_configs_2.C_init[22]^cont_configs_2.C_init[23]^cont_configs_2.C_init[24]^cont_configs_2.C_init[30];
+x2[30]<=	cont_configs_2.C_init[0]^cont_configs_2.C_init[2]^cont_configs_2.C_init[3]^cont_configs_2.C_init[5]^cont_configs_2.C_init[7]^cont_configs_2.C_init[8]^cont_configs_2.C_init[9]^cont_configs_2.C_init[10]^cont_configs_2.C_init[11]^cont_configs_2.C_init[12]^cont_configs_2.C_init[13]^cont_configs_2.C_init[14]^cont_configs_2.C_init[15]^cont_configs_2.C_init[16]^cont_configs_2.C_init[17]^cont_configs_2.C_init[23]^cont_configs_2.C_init[24]^cont_configs_2.C_init[25];     
+              
+              
+              x1<=500;
+            end   
+        
+        lfsr_read: begin
+          if(m_mainblock_ready)
+          
+        freq_bit_map_sum <= (
+ cont_configs_2.freqbitmap[44] + cont_configs_2.freqbitmap[43] + cont_configs_2.freqbitmap[42] + 
+          cont_configs_2.freqbitmap[41] + cont_configs_2.freqbitmap[40] + cont_configs_2.freqbitmap[39] +  
+cont_configs_2.freqbitmap[38] + cont_configs_2.freqbitmap[37] + cont_configs_2.freqbitmap[36] + 
+cont_configs_2.freqbitmap[35] + cont_configs_2.freqbitmap[34] + cont_configs_2.freqbitmap[33] + 
+cont_configs_2.freqbitmap[32] + cont_configs_2.freqbitmap[31] + cont_configs_2.freqbitmap[30] + 
+cont_configs_2.freqbitmap[29] + cont_configs_2.freqbitmap[28] + cont_configs_2.freqbitmap[27] + 
+cont_configs_2.freqbitmap[26] + cont_configs_2.freqbitmap[25] + cont_configs_2.freqbitmap[24] + 
+cont_configs_2.freqbitmap[23] + cont_configs_2.freqbitmap[22] + cont_configs_2.freqbitmap[21] + 
+cont_configs_2.freqbitmap[20] + cont_configs_2.freqbitmap[19] + cont_configs_2.freqbitmap[18] + 
+cont_configs_2.freqbitmap[17] + cont_configs_2.freqbitmap[16] + cont_configs_2.freqbitmap[15] + 
+cont_configs_2.freqbitmap[14] + cont_configs_2.freqbitmap[13] + cont_configs_2.freqbitmap[12] + 
+cont_configs_2.freqbitmap[11] + cont_configs_2.freqbitmap[10] + cont_configs_2.freqbitmap[9] + 
+cont_configs_2.freqbitmap[8] + cont_configs_2.freqbitmap[7] + cont_configs_2.freqbitmap[6] + 
+cont_configs_2.freqbitmap[5] + cont_configs_2.freqbitmap[4] + cont_configs_2.freqbitmap[3] + 
+cont_configs_2.freqbitmap[2] + cont_configs_2.freqbitmap[1] + cont_configs_2.freqbitmap[0]
+
+   
+);
+          
+          
+          
+          lfsr_x1<=x1;
+           lfsr_S<=x2;
+            end
+            data_out:begin
+              if((cntr_1 >= cont_configs_2.dmrsoffset) && (cntr_1 <= cont_configs_2.pnseqlength)) 
+                begin
+                  if(m_mainblock_ready)
+                    begin
+                      lfsr_x1 <={lfsr_x1[(cntr_1+3)]^lfsr_x1[cntr_1],lfsr_x1[30:1]};
+              lfsr_S <={(lfsr_S[(cntr_1+3)]^lfsr_S[(cntr_1+2)]^lfsr_S[(cntr_1+1)]^lfsr_S[cntr_1]),lfsr_S[30:1]};
+                      m_mainblock_data[0] <= lfsr_x1[0] ^ lfsr_S[0];
+                      m_mainblock_data[1] <= lfsr_x1[1] ^ lfsr_S[1];
+                      m_mainblock_data[7:2] <= 0;
+                      if(cont_configs_2.freqbitmap[cntr_2]) begin
+                            m_mainblock_valid <= 1'b1;
+                            cntr_3<=cntr_3+1'b1;
+                            //flag<=1'b1;
+                        end
+                        else begin
+                            m_mainblock_valid <= 1'b0;
+                            cntr_3<=0;
+                          cntr_2<= cntr_2 +1'b1;
+                            //flag<=1'b0;
+                        end
+                        // counter 3 logic
+                        if(cntr_3==17) begin
+                            cntr_2<=cntr_2+1'b1;
+                            cntr_3<=0;
+                        end
+                        else begin
+                          if(cont_configs_2.freqbitmap[cntr_2] && cntr_3<17)
+                            cntr_2<=cntr_2;
+                          
+                        end 
+
+                        cntr_1 <= cntr_1 + 1'b1;
+                   end
+                  else
+                    begin 
+                      cntr_2<=cntr_2;
+                      	cntr_3<=cntr_3;
+                      cntr_1<=cntr_1;
+                  	  lfsr_x1<= lfsr_x1;
+                      lfsr_S<=lfsr_S;
+                      m_mainblock_data<=m_mainblock_data;
+    
+                    end
+                end
+              else 
+            	begin
+               	  //count <= count + 1'b1;
+                  cntr_2<=cntr_2;
+                    cntr_3<=cntr_3;
+                    cntr_1 <= cntr_1 + 1'b1;
+                    m_mainblock_valid<=1'b0;
+            	end
+            end
+            default:begin
+              m_mainblock_data<=0;
+          	  m_mainblock_valid<=0;
+            end
+      endcase
+    end
+    end 
+always @(*)
+begin
+  if (reset)
+    s_mainblock_ready = 0;
+  else
+    begin
+      case (current_state)
+        idle:        s_mainblock_ready = 0;
+        process:     s_mainblock_ready = 1;
+        out_process: s_mainblock_ready = 0;
+        lfsr_read:   s_mainblock_ready = 0;
+        data_out:    s_mainblock_ready = 0;
+      endcase
+    end
+end
+
+endmodule
+
+  

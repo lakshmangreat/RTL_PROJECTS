@@ -1,0 +1,103 @@
+
+
+
+module top#( parameter DATA_WIDTH=64,
+            
+            DEPTH=1024,
+            PTR_SIZE=$clog2(DEPTH),
+            output_datawidth  =$bits(config_input_t),
+          datawidth_1 = 5,
+  datawidth_2 = 64)(
+ 
+
+  input clk,
+  input reset,
+  
+  input [datawidth_1-1:0] pio,
+  input [datawidth_2-1:0] s_data,
+//   input s_valid,
+//   output reg s_ready,
+  
+  output reg[output_datawidth-1:0] m_data_1,
+  output reg m_valid_1,
+  input m_ready_1,
+  
+  output reg[DATA_WIDTH-1:0] m_data_2,
+  output reg m_valid_2,
+  input m_ready_2
+
+);
+  
+  wire [datawidth_2-1:0] datagen_fifo_data;
+  wire datagen_fifo_valid;
+  wire datagen_fifo_ready;
+ 
+  data_generator#(
+   datawidth_1, datawidth_2) data_gen_1(clk,
+                                         reset,
+                                         pio,
+                                         s_data,
+                                         
+                                         datagen_fifo_data,
+                                         datagen_fifo_valid,
+                                         datagen_fifo_ready);
+  
+  wire[DATA_WIDTH-1:0] fifo_out;
+  wire fifo_out_valid;
+  wire fifo_out_ready;
+  reg full,empty;
+   
+  // fifo Instantiation
+  fifo#(DATA_WIDTH,DEPTH,PTR_SIZE) s1(clk,
+                                           reset,
+                                            datagen_fifo_valid&&datagen_fifo_ready,
+                                           fifo_out_ready,
+                                           datagen_fifo_data,
+                                           datagen_fifo_valid,
+                                           fifo_out_ready,
+                                           fifo_out,
+                                           fifo_out_valid,
+                                           datagen_fifo_ready,
+                                           full,
+                                            empty);
+  
+  //data_router Instantiation
+  
+  data_router#(DATA_WIDTH,
+               output_datawidth) d1(clk,
+                            reset,
+                            fifo_out,
+                            fifo_out_valid,
+                            fifo_out_ready,
+                            m_data_1,
+                            m_valid_1,
+                            m_ready_1,
+                            m_data_2,
+                            m_valid_2,
+                            m_ready_2
+                           );
+endmodule
+  
+  
+
+      
+        
+              
+          
+              
+          
+        
+          
+        
+      
+          
+               
+          
+              
+          
+        
+          
+        
+      
+          
+      
